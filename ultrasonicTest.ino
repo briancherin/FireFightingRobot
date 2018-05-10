@@ -18,6 +18,10 @@ float frontSensor;
 float rightSensor;
 float leftSensor;
 
+//constants
+int LEFT = 13423;
+int RIGHT = 43543;
+
 bool goingForward = false;
 
 void setup() {
@@ -46,35 +50,38 @@ void loop() {
 
   frontSensor = getUltraSonicSensorVal(trigFront, echoFront);
   rightSensor = getUltraSonicSensorVal(trigRight, echoRight);
-  leftSensor = getUltraSonicSensorVal(trigFront, echoFront);
+  leftSensor = getUltraSonicSensorVal(trigLeft, echoLeft);
  
   Serial.print("Left:");
   Serial.println(leftSensor); 
-  Serial.print("Right:");
-  Serial.println(rightSensor);
-  Serial.print("Front:");
-  Serial.println(frontSensor);
+ // Serial.print("Right:");
+ // Serial.println(rightSensor);
+//  Serial.print("Front:");
+//  Serial.println(frontSensor);
   
-/*
-  if (frontSensor < 7) { //See wall
-    if (goingForward) reverse(); //Reverse
-  } else {  //No wall
-    if (!goingForward) forward();  //Forward
-  }
- */
- followRightWall();
 
-
+ followWall(LEFT);
+ 
 }
 
-void followRightWall(){
+//@param side: LEFT or RIGHT (which wall to follow)
+void followWall(int side){
   //The right sensor should always sense a wall
   //If the right sensor does not detect a wall, must turn right until see wall
 
+  float sideSensor = (side == LEFT) ? leftSensor : rightSensor;
+
   forward(); //Go foward
-  if (rightSensor > 7){  //If there is no wall to the right
-    delay(1000);  //Let the body pass the turn (TODO: THIS BREAKS IT)
-    turnRight();  //Rotate right
+  if (sideSensor > 3){  //If there is no wall to the right
+    if (sideSensor > 20){  //If this is a sharp turn
+      forward();  //move forward first to accommodate for the body size
+      delay(500);
+      turn(side); //Make a turn 
+    } else {  //Otherwise, just maintain a close distance to the wall
+    
+      rotate(side);  //Rotate toward the wall
+    }
+    
   } else {
     forward();
   }
@@ -127,7 +134,7 @@ void enableMotors(){
   digitalWrite(enabler, HIGH);
 }
 
-void turnRight(){
+void rotateRight(){
   digitalWrite(fwdPin, HIGH);
   digitalWrite(revPin, LOW);
 
@@ -135,11 +142,26 @@ void turnRight(){
   digitalWrite(revPin2, HIGH);
 }
 
-void turnLeft(){
+void rotateLeft(){
   digitalWrite(fwdPin, LOW);
   digitalWrite(revPin, HIGH);
 
   digitalWrite(fwdPin2, HIGH);
   digitalWrite(revPin2, LOW);
+}
+
+//@param direction: LEFT or RIGHT
+void rotate(int direction) {
+  if (direction == LEFT){
+    rotateLeft();
+  } else {
+    rotateRight();
+  }
+}
+
+//@param direction: LEFT or RIGHT
+void turn(int direction){
+  rotate(direction);
+  delay(500);
 }
 
