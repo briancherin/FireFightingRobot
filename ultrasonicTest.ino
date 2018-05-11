@@ -61,8 +61,16 @@ void loop() {
   
 
  followWall(LEFT);
- 
+
 }
+
+//If it makes two turns in the same direction, it must be inside a room. (NOPE)(wait yes)
+//keep track of current direction it's facing. change it when you make a turn.
+//start at 0, if make a right turn, add 1, left, subtract  one, if magnitude is 2, in room.
+
+//If wall to front and right but not left, turn left.
+//trapped in corner - back up until no wall to left or right
+//
 
 //@param side: LEFT or RIGHT (which wall to follow)
 void followWall(int side){
