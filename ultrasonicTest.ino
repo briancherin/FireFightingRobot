@@ -21,6 +21,8 @@ float leftSensor;
 //constants
 int LEFT = 13423;
 int RIGHT = 43543;
+int FRONT = 345234;
+int MAX_DIST_FROM_WALL = 10;
 
 bool goingForward = false;
 
@@ -79,8 +81,22 @@ void followWall(int side){
 
   float sideSensor = (side == LEFT) ? leftSensor : rightSensor;
 
+//TODO: For larger distances away from the wall, make it able to turn back onto course 
+//      without hitting on the front
+  
+
+  bool wallLeft = isCloseWall(LEFT);
+  bool wallRight = isCloseWall(RIGHT);
+  bool wallFront = isCloseWall(FRONT);
+
+  /** STAY WITH THE WALL **/
   forward(); //Go foward
-  if (sideSensor > 3){  //If there is no wall to the right
+
+  /** CASES **/
+  if (wallLeft && wallFront && !wallRight){
+    rotate(RIGHT);
+  } else {
+  if (sideSensor > MAX_DIST_FROM_WALL){  //If there is no wall to the right.      
     if (sideSensor > 20){  //If this is a sharp turn
       forward();  //move forward first to accommodate for the body size
       delay(500);
@@ -90,10 +106,31 @@ void followWall(int side){
       rotate(side);  //Rotate toward the wall
     }
     
+  } else if (sideSensor < 1){
+    rotate(oppositeDirection(side));
   } else {
     forward();
   }
+  }
 
+  
+
+}
+
+bool isCloseWall(int direction){
+  return getSensorVal(direction) < MAX_DIST_FROM_WALL;
+}
+
+float getSensorVal(int direction){
+  if (direction == LEFT){
+    return leftSensor;
+  }
+  if (direction == RIGHT){
+    return rightSensor;
+  }
+  if (direction == FRONT){
+    return frontSensor;
+  }
 }
 
 float getUltraSonicSensorVal(int trig, int echo){
@@ -171,5 +208,12 @@ void rotate(int direction) {
 void turn(int direction){
   rotate(direction);
   delay(500);
+}
+
+int oppositeDirection(int direction){
+  if (direction == LEFT){
+    return RIGHT;
+  }
+  return LEFT;
 }
 
