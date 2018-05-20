@@ -22,7 +22,10 @@ float leftSensor;
 int LEFT = 13423;
 int RIGHT = 43543;
 int FRONT = 345234;
-int MAX_DIST_FROM_WALL = 10;
+int MAX_DIST_FROM_WALL = 30;
+int MIN_DIST_FROM_WALL = 1;
+int CLOSE_DIST_FROM_WALL = 10;
+int SHARP_TURN_DIST = 40;
 
 bool goingForward = false;
 
@@ -54,8 +57,8 @@ void loop() {
   rightSensor = getUltraSonicSensorVal(trigRight, echoRight);
   leftSensor = getUltraSonicSensorVal(trigLeft, echoLeft);
  
-  Serial.print("Left:");
-  Serial.println(leftSensor); 
+//  Serial.print("Left:");
+//  Serial.println(leftSensor); 
  // Serial.print("Right:");
  // Serial.println(rightSensor);
 //  Serial.print("Front:");
@@ -93,20 +96,32 @@ void followWall(int side){
   forward(); //Go foward
 
   /** CASES **/
-  if (wallLeft && wallFront && !wallRight){
-    rotate(RIGHT);
+  if ((wallLeft && wallFront && !wallRight) || (wallRight && wallFront && !wallLeft)){
+    Serial.print("Inside corner case\n");
+    turnCloseToWall(oppositeDirection(side));
+   //turn(RIGHT);
+   
+   
+   Serial.print(frontSensor);
+      Serial.print("\n");
   } else {
-  if (sideSensor > MAX_DIST_FROM_WALL){  //If there is no wall to the right.      
-    if (sideSensor > 20){  //If this is a sharp turn
+    forward();
+  if (sideSensor > MAX_DIST_FROM_WALL){  //If there is no wall to the side.      
+    if (sideSensor > SHARP_TURN_DIST){  //If this is a sharp turn
+      Serial.print("Sharp turn case: leftSensor= ");
+      Serial.print(leftSensor);
+      Serial.print("\n");
+
+      
       forward();  //move forward first to accommodate for the body size
       delay(500);
       turn(side); //Make a turn 
     } else {  //Otherwise, just maintain a close distance to the wall
-    
+      Serial.print("Maintain\n");
       rotate(side);  //Rotate toward the wall
     }
     
-  } else if (sideSensor < 1){
+  } else if (sideSensor < MIN_DIST_FROM_WALL){
     rotate(oppositeDirection(side));
   } else {
     forward();
@@ -118,7 +133,7 @@ void followWall(int side){
 }
 
 bool isCloseWall(int direction){
-  return getSensorVal(direction) < MAX_DIST_FROM_WALL;
+  return getSensorVal(direction) < CLOSE_DIST_FROM_WALL;
 }
 
 float getSensorVal(int direction){
@@ -205,9 +220,26 @@ void rotate(int direction) {
 }
 
 //@param direction: LEFT or RIGHT
+void turnCloseToWall(int direction){
+  rotate(direction);
+  delay(250);
+ // forward();
+ // delay(500);
+ // rotate(direction);
+ // delay(500);
+
+  while(!isCloseWall(oppositeDirection(direction))){
+    Serial.print("inloop\n");
+    forward();
+  }
+  Serial.print("Finish close wall turn\n");
+}
+
+//@param direction: LEFT or RIGHT
 void turn(int direction){
   rotate(direction);
   delay(500);
+  Serial.print("Finished 90 degree turn\n");
 }
 
 int oppositeDirection(int direction){
