@@ -22,8 +22,8 @@ float leftSensor;
 int LEFT = 13423;
 int RIGHT = 43543;
 int FRONT = 345234;
-int MAX_DIST_FROM_WALL = 30;
-int MIN_DIST_FROM_WALL = 1;
+int MAX_DIST_FROM_WALL = 20;
+int MIN_DIST_FROM_WALL = 2;
 int CLOSE_DIST_FROM_WALL = 10;
 int SHARP_TURN_DIST = 40;
 
@@ -98,12 +98,11 @@ void followWall(int side){
   /** CASES **/
   if ((wallLeft && wallFront && !wallRight) || (wallRight && wallFront && !wallLeft)){
     Serial.print("Inside corner case\n");
-    turnCloseToWall(oppositeDirection(side));
+    turnCloseToWall(side);   //Follow and turn through the corner
    //turn(RIGHT);
    
-   
-   Serial.print(frontSensor);
-      Serial.print("\n");
+   Serial.print("frontSensor: ");
+   Serial.println(frontSensor);
   } else {
     forward();
   if (sideSensor > MAX_DIST_FROM_WALL){  //If there is no wall to the side.      
@@ -219,27 +218,30 @@ void rotate(int direction) {
   }
 }
 
-//@param direction: LEFT or RIGHT
+//@param direction of wall following: LEFT or RIGHT
 void turnCloseToWall(int direction){
-  rotate(direction);
-  delay(250);
- // forward();
- // delay(500);
- // rotate(direction);
- // delay(500);
-
-  while(!isCloseWall(oppositeDirection(direction))){
-    Serial.print("inloop\n");
+  //Serial.print(frontSensor);
+  rotate(oppositeDirection(direction));
+  delay(100);
+  Serial.println("HIOERHOIHRFOEHIIORHF");
+  while(!(leftSensor < 15)){ //Until it sees the wall again, make micro turns
+    Serial.println(leftSensor);
+    updateSensorVals();
+    Serial.println("forward until see side wall");
     forward();
+     delay(400);
+    rotate(oppositeDirection(direction));
+    delay(300);
+    
   }
-  Serial.print("Finish close wall turn\n");
+  Serial.println("Finished close wall turn");
 }
 
-//@param direction: LEFT or RIGHT
+//@param direction to turn: LEFT or RIGHT (90 degree turn)
 void turn(int direction){
   rotate(direction);
   delay(500);
-  Serial.print("Finished 90 degree turn\n");
+  Serial.println("Finished 90 degree turn");
 }
 
 int oppositeDirection(int direction){
@@ -247,5 +249,11 @@ int oppositeDirection(int direction){
     return RIGHT;
   }
   return LEFT;
+}
+
+void updateSensorVals(){
+  frontSensor = getUltraSonicSensorVal(trigFront, echoFront);
+  rightSensor = getUltraSonicSensorVal(trigRight, echoRight);
+  leftSensor = getUltraSonicSensorVal(trigLeft, echoLeft);
 }
 
