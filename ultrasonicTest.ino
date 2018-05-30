@@ -64,6 +64,7 @@ void loop() {
 //  Serial.print("Front:");
 //  Serial.println(frontSensor);
   
+      Serial.println(frontSensor);
 
  followWall(LEFT);
 
@@ -96,7 +97,10 @@ void followWall(int side){
   forward(); //Go foward
 
   /** CASES **/
-  if ((wallLeft && wallFront && !wallRight) || (wallRight && wallFront && !wallLeft)){
+  if(frontSensor < 4){  //If the front sensor is too close to the wall, turn right.
+    turn(oppositeDirection(side));
+  }
+  else if ((wallLeft && wallFront && !wallRight) || (wallRight && wallFront && !wallLeft)){
     Serial.print("Inside corner case\n");
     turnCloseToWall(side);   //Follow and turn through the corner
    //turn(RIGHT);
@@ -108,7 +112,6 @@ void followWall(int side){
   if (sideSensor > MAX_DIST_FROM_WALL){  //If there is no wall to the side.      
     if (sideSensor > SHARP_TURN_DIST){  //If this is a sharp turn
       Serial.print("Sharp turn case: leftSensor= ");
-      Serial.print(leftSensor);
       Serial.print("\n");
 
       
@@ -120,7 +123,7 @@ void followWall(int side){
       rotate(side);  //Rotate toward the wall
     }
     
-  } else if (sideSensor < MIN_DIST_FROM_WALL){
+  } else if (sideSensor < MIN_DIST_FROM_WALL || sideSensor > 100){
     rotate(oppositeDirection(side));
   } else {
     forward();
@@ -240,7 +243,7 @@ void turnCloseToWall(int direction){
 //@param direction to turn: LEFT or RIGHT (90 degree turn)
 void turn(int direction){
   rotate(direction);
-  delay(500);
+  delay(900 );
   Serial.println("Finished 90 degree turn");
 }
 
