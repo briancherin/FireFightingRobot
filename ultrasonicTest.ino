@@ -1,11 +1,11 @@
 //Ultrasonic sensors
-int echoLeft = 8;
-int trigLeft = 9;
-int echoRight = 12;
-int trigRight = 13;
-int echoFront = 3;
-int trigFront = 4;
-int enabler = 2;
+int echoLeft = 31;
+int trigLeft = 30;
+int echoRight = 52;
+int trigRight = 53;
+int echoFront = 40;
+int trigFront = 41;
+
 
 //HBridge motor control
 int fwdPin = 5;           //Logic level output to the H-Bridge (Forward)
@@ -23,9 +23,13 @@ int LEFT = 13423;
 int RIGHT = 43543;
 int FRONT = 345234;
 int MAX_DIST_FROM_WALL = 20;
-int MIN_DIST_FROM_WALL = 2;
+int MIN_DIST_FROM_WALL = 7;
 int CLOSE_DIST_FROM_WALL = 10;
-int SHARP_TURN_DIST = 40;
+int SHARP_TURN_DIST = 80;
+int NINETY_DEGREE_DELAY = 300;
+
+int wallVariable = -1;
+bool wallBool = false;
 
 bool goingForward = false;
 
@@ -37,7 +41,7 @@ void setup() {
   pinMode(trigRight, OUTPUT);
   pinMode(echoFront, INPUT);
   pinMode(trigFront, OUTPUT);
-  pinMode(enabler, OUTPUT);
+ // pinMode(enabler, OUTPUT);
 
   //Hbridge setup
   pinMode(fwdPin, OUTPUT); //Set the forward pin to an output
@@ -57,14 +61,14 @@ void loop() {
   rightSensor = getUltraSonicSensorVal(trigRight, echoRight);
   leftSensor = getUltraSonicSensorVal(trigLeft, echoLeft);
  
-Serial.print("Left:");
-  Serial.println(leftSensor); 
+//Serial.print("Left:");
+//  Serial.println(leftSensor); 
  // Serial.print("Right:");
- // Serial.println(rightSensor);
-//  Serial.print("Front:");
-  //Serial.println(frontSensor);
+  //Serial.println(rightSensor);
+  Serial.print("Front:");
+  Serial.println(frontSensor);
   //
-  //    Serial.println(frontSensor);
+   //   Serial.println("JJJKKJLLK");
 
  followWall(LEFT);
 
@@ -99,36 +103,68 @@ void followWall(int side){
   /** CASES **/
   if(frontSensor < 4 /*|| frontSensor > 1000*/){  //If the front sensor is too close to the wall, turn right.
     turn(oppositeDirection(side));
+    Serial.println("front 2 close");
   }
   else if ((wallLeft && wallFront && !wallRight) || (wallRight && wallFront && !wallLeft)){
     Serial.print("Inside corner case\n");
     turnCloseToWall(side);   //Follow and turn through the corner
-   //turn(RIGHT);
    
    Serial.print("frontSensor: ");
    Serial.println(frontSensor);
   } else {
     forward();
-  if (sideSensor > MAX_DIST_FROM_WALL){  //If there is no wall to the side.      
+  if (sideSensor > 7){  //If we are far away from the wall     
     if (sideSensor > SHARP_TURN_DIST){  //If this is a sharp turn
       Serial.println(leftSensor);
-      Serial.print("Sharp turn case: leftSensor= ");
-      Serial.print("\n");
-
-      
-      forward();  //move forward first to accommodate for the body size
-      delay(500);
-      turn(side); //Make a turn 
-    } else {  //Otherwise, just maintain a close distance to the wall
+      Serial.println("Sharp turn case: leftSensor= ");
+      microTurn(side); //Make a turn 
+    } else if(sideSensor < 15) {  //Kind of close to wall
       Serial.print("Maintain\n");
-      rotate(side);  //Rotate toward the wall
+      //just maintain a close distance to the wall by drifting forward
+      forward();
+      delay(100);
     }
+    else{ //Very far from wall
+      turn(side);
+  /*    int trackFrontSensor1 = frontSensor;
+      forward();
+      delay(50);
+      updateSensorVals();
+      int trackFrontSensor2 = frontSensor;
+      Serial.print("From ");
+      Serial.print(trackFrontSensor1);
+      Serial.print(" to ");
+      Serial.println(trackFrontSensor2);
+      if(trackFrontSensor1 - trackFrontSensor2 > 0){
+        Serial.println("Got closer to wall. Enter loop.");*/
+        while(frontSensor > 15){
+          updateSensorVals();
+          forward();
+          Serial.print("Forward to wall case ");
+          Serial.println(frontSensor);
+
+          if(getSensorVal(side) < 15){  //If stuck in loop but now close to wall
+            break;                      //Get out of the loop and continue following
+          }
+          
+        } 
+    //  }
+      
+    }
+  
     
-  } else if (sideSensor < MIN_DIST_FROM_WALL || sideSensor > 1000){
-    rotate(oppositeDirection(side));
+  } else if (sideSensor < MIN_DIST_FROM_WALL || sideSensor > 1000){ //Too close to wall
+    
+
+    rotate(oppositeDirection);
+    delay(50);
+    forward();
+    delay(100);
+    
     Serial.println("hel");
   } else {
     forward();
+    Serial.println("no cases, go forward");
   }
   }
 
@@ -169,7 +205,7 @@ float getUltraSonicSensorVal(int trig, int echo){
 
 
 void forward() {
-  enableMotors();
+  //enableMotors()
   digitalWrite(fwdPin, HIGH); 
   digitalWrite(revPin, LOW);
 
@@ -191,11 +227,11 @@ void reverse(){
 }
 
 void stopMotors(){
-  digitalWrite(enabler, LOW);
+//  digitalWrite(enabler, LOW);
 }
 
 void enableMotors(){
-  digitalWrite(enabler, HIGH);
+//  digitalWrite(enabler, HIGH);
 }
 
 void rotateRight(){
@@ -242,11 +278,19 @@ void turnCloseToWall(int direction){
   Serial.println("Finished close wall turn");
 }
 
-//@param direction to turn: LEFT or RIGHT (90 degree turn)
-void turn(int direction){
+//@param direction to turn: LEFT or RIGHT 
+void microTurn(int direction){
   rotate(direction);
-  delay(1200);
+  delay(50);
+  forward();
+  delay(50);
   Serial.println("Finished 90 degree turn");
+}
+
+//@param direction to turn: LEFT or RIGHT (90 degree turn)
+void turn (int direction){
+  rotate(direction);
+  delay(NINETY_DEGREE_DELAY);
 }
 
 int oppositeDirection(int direction){
