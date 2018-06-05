@@ -61,12 +61,12 @@ void loop() {
   rightSensor = getUltraSonicSensorVal(trigRight, echoRight);
   leftSensor = getUltraSonicSensorVal(trigLeft, echoLeft);
  
-//Serial.print("Left:");
-//  Serial.println(leftSensor); 
+Serial.print("Left:");
+  Serial.println(leftSensor); 
  // Serial.print("Right:");
   //Serial.println(rightSensor);
-  Serial.print("Front:");
-  Serial.println(frontSensor);
+ // Serial.print("Front:");
+ // Serial.println(frontSensor);
   //
    //   Serial.println("JJJKKJLLK");
 
@@ -105,13 +105,14 @@ void followWall(int side){
     turn(oppositeDirection(side));
     Serial.println("front 2 close");
   }
-  else if ((wallLeft && wallFront && !wallRight) || (wallRight && wallFront && !wallLeft)){
+ /* else if ((wallLeft && wallFront && !wallRight) || (wallRight && wallFront && !wallLeft)){
+    //TODO: Just change this to turn(oppositeDirection(side))? might not need microturn necessarily (to make it more consistent)
     Serial.print("Inside corner case\n");
     turnCloseToWall(side);   //Follow and turn through the corner
    
    Serial.print("frontSensor: ");
    Serial.println(frontSensor);
-  } else {
+  } */else {
     forward();
   if (sideSensor > 7){  //If we are far away from the wall     
     if (sideSensor > SHARP_TURN_DIST){  //If this is a sharp turn
@@ -156,7 +157,7 @@ void followWall(int side){
   } else if (sideSensor < MIN_DIST_FROM_WALL || sideSensor > 1000){ //Too close to wall
     
 
-    rotate(oppositeDirection);
+    rotate(oppositeDirection(side));
     delay(50);
     forward();
     delay(100);
