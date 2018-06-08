@@ -5,6 +5,7 @@ int echoRight = 52;
 int trigRight = 53;
 int echoFront = 40;
 int trigFront = 41;
+int flameSensor = A0;
 
 
 //HBridge motor control
@@ -17,6 +18,8 @@ int revPin2 = 11;
 float frontSensor;
 float rightSensor;
 float leftSensor;
+int fireVal;
+int startFireVal; //updates every x seconds
 
 //constants
 int LEFT = 13423;
@@ -32,6 +35,10 @@ int wallVariable = -1;
 bool wallBool = false;
 
 bool goingForward = false;
+
+unsigned long startTimeMillis;
+unsigned long currTimeMillis;
+
 
 void setup() {
   // put your setup code here, to run once:
@@ -49,6 +56,9 @@ void setup() {
    pinMode(fwdPin2, OUTPUT);
    pinMode(revPin2, OUTPUT);
 
+   startTimeMillis = millis();
+   startFireVal = analogRead(flameSensor);
+
   
   Serial.begin(9600);
 
@@ -60,9 +70,12 @@ void loop() {
   frontSensor = getUltraSonicSensorVal(trigFront, echoFront);
   rightSensor = getUltraSonicSensorVal(trigRight, echoRight);
   leftSensor = getUltraSonicSensorVal(trigLeft, echoLeft);
+  fireVal = analogRead(flameSensor);
+  Serial.print("Fire: ");
+  Serial.println(fireVal);
  
-Serial.print("Left:");
-  Serial.println(leftSensor); 
+//Serial.print("Left:");
+ // Serial.println(leftSensor); 
  // Serial.print("Right:");
   //Serial.println(rightSensor);
  // Serial.print("Front:");
@@ -100,10 +113,23 @@ void followWall(int side){
   /** STAY WITH THE WALL **/
   forward(); //Go foward
 
+
+  currTimeMillis = millis();
+  if (currTimeMillis - startTimeMillis > 50){
+    
+    startFireVal = fireVal;
+    startTimeMillis = currTimeMillis;
+  }
+  
+  if (startFireVal - fireVal >= 100){
+       Serial.print("THERES FIRE LOL: ");
+       Serial.println(startFireVal - fireVal);
+  }
+    
   /** CASES **/
   if(frontSensor < 4 /*|| frontSensor > 1000*/){  //If the front sensor is too close to the wall, turn right.
     turn(oppositeDirection(side));
-    Serial.println("front 2 close");
+   // Serial.println("front 2 close");
   }
  /* else if ((wallLeft && wallFront && !wallRight) || (wallRight && wallFront && !wallLeft)){
     //TODO: Just change this to turn(oppositeDirection(side))? might not need microturn necessarily (to make it more consistent)
