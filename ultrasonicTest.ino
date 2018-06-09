@@ -7,6 +7,9 @@ int echoFront = 40;
 int trigFront = 41;
 int flameSensor = A0;
 
+int enabler1 = 35;
+int enabler2 = 37;
+
 
 //HBridge motor control
 int fwdPin = 5;           //Logic level output to the H-Bridge (Forward)
@@ -48,13 +51,17 @@ void setup() {
   pinMode(trigRight, OUTPUT);
   pinMode(echoFront, INPUT);
   pinMode(trigFront, OUTPUT);
- // pinMode(enabler, OUTPUT);
+  pinMode(enabler1, OUTPUT);
+  pinMode(enabler2, OUTPUT);
 
   //Hbridge setup
   pinMode(fwdPin, OUTPUT); //Set the forward pin to an output
    pinMode(revPin, OUTPUT); //Set the forward pin to an output
    pinMode(fwdPin2, OUTPUT);
    pinMode(revPin2, OUTPUT);
+
+   digitalWrite(enabler1, HIGH);
+   digitalWrite(enabler2, HIGH);
 
    startTimeMillis = millis();
    startFireVal = analogRead(flameSensor);
@@ -74,8 +81,8 @@ void loop() {
   Serial.print("Fire: ");
   Serial.println(fireVal);
  
-//Serial.print("Left:");
- // Serial.println(leftSensor); 
+Serial.print("Left:");
+  Serial.println(leftSensor); 
  // Serial.print("Right:");
   //Serial.println(rightSensor);
  // Serial.print("Front:");
@@ -97,14 +104,8 @@ void loop() {
 
 //@param side: LEFT or RIGHT (which wall to follow)
 void followWall(int side){
-  //The right sensor should always sense a wall
-  //If the right sensor does not detect a wall, must turn right until see wall
 
   float sideSensor = (side == LEFT) ? leftSensor : rightSensor;
-
-//TODO: For larger distances away from the wall, make it able to turn back onto course 
-//      without hitting on the front
-  
 
   bool wallLeft = isCloseWall(LEFT);
   bool wallRight = isCloseWall(RIGHT);
@@ -115,30 +116,52 @@ void followWall(int side){
 
 
   currTimeMillis = millis();
-  if (currTimeMillis - startTimeMillis > 50){
+  if (currTimeMillis - startTimeMillis > 2000){
     
     startFireVal = fireVal;
     startTimeMillis = currTimeMillis;
+    //Serial.println("Updating fire sensor");
   }
-  
-  if (startFireVal - fireVal >= 100){
+/*  
+  if (startFireVal - fireVal >= 10){
        Serial.print("THERES FIRE LOL: ");
-       Serial.println(startFireVal - fireVal);
-  }
+       //Serial.println(startFireVal - fireVal);
+       //rotate towards fire and moev forward for either a certain time or until a value is met 
+       //goes for a certain amount until it sees something smaller, at smaller point rotate more until further smaller, else rotate back until original value
+       int tempFireVal = fireVal; //this fireval was a "good value", use it as basis
+       fireVal = analogRead(A0);
+       while(fireVal - tempFireVal < 10){
+        Serial.print("IN CLOSE FIRE LOOP: curr: ");
+        Serial.print(fireVal);
+        Serial.print(" --- tempFireVal: ");
+        Serial.println(tempFireVal);
+        
+        rotate(RIGHT);
+        fireVal = analogRead(A0);
+        if(fireVal < tempFireVal - 5){
+          Serial.println("FOUND NEW MINIMUM");
+          tempFireVal = fireVal; //setting new "center", need to rotate again
+        }
+       }
+
+       while(abs(tempFireVal - fireVal) <= 4){
+        Serial.println("NOPE GOING BACK");
+       rotate(LEFT);
+       fireVal = analogRead(A0);
+       }
+       
+       
+  } else {
+    Serial.print("diff: ");
+    Serial.println(startFireVal-fireVal);
+  }*/
     
   /** CASES **/
   if(frontSensor < 4 /*|| frontSensor > 1000*/){  //If the front sensor is too close to the wall, turn right.
     turn(oppositeDirection(side));
-   // Serial.println("front 2 close");
+    Serial.println("front 2 close");
   }
- /* else if ((wallLeft && wallFront && !wallRight) || (wallRight && wallFront && !wallLeft)){
-    //TODO: Just change this to turn(oppositeDirection(side))? might not need microturn necessarily (to make it more consistent)
-    Serial.print("Inside corner case\n");
-    turnCloseToWall(side);   //Follow and turn through the corner
-   
-   Serial.print("frontSensor: ");
-   Serial.println(frontSensor);
-  } */else {
+else {
     forward();
   if (sideSensor > 7){  //If we are far away from the wall     
     if (sideSensor > SHARP_TURN_DIST){  //If this is a sharp turn
@@ -153,17 +176,7 @@ void followWall(int side){
     }
     else{ //Very far from wall
       turn(side);
-  /*    int trackFrontSensor1 = frontSensor;
-      forward();
-      delay(50);
-      updateSensorVals();
-      int trackFrontSensor2 = frontSensor;
-      Serial.print("From ");
-      Serial.print(trackFrontSensor1);
-      Serial.print(" to ");
-      Serial.println(trackFrontSensor2);
-      if(trackFrontSensor1 - trackFrontSensor2 > 0){
-        Serial.println("Got closer to wall. Enter loop.");*/
+ 
         while(frontSensor > 15){
           updateSensorVals();
           forward();
