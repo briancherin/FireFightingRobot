@@ -10,6 +10,8 @@ int flameSensor = A0;
 int enabler1 = 35;
 int enabler2 = 37;
 
+int fanPin = 47;
+
 
 //HBridge motor control
 int fwdPin = 5;           //Logic level output to the H-Bridge (Forward)
@@ -34,6 +36,9 @@ int CLOSE_DIST_FROM_WALL = 10;
 int SHARP_TURN_DIST = 80;
 int NINETY_DEGREE_DELAY = 300;
 
+//const int FIRE_THRESHOLD = 10;
+const int FIRE_THRESHOLD = 500;
+
 int wallVariable = -1;
 bool wallBool = false;
 
@@ -53,6 +58,7 @@ void setup() {
   pinMode(trigFront, OUTPUT);
   pinMode(enabler1, OUTPUT);
   pinMode(enabler2, OUTPUT);
+  pinMode(fanPin, OUTPUT);
 
   //Hbridge setup
   pinMode(fwdPin, OUTPUT); //Set the forward pin to an output
@@ -122,15 +128,18 @@ void followWall(int side){
     startTimeMillis = currTimeMillis;
     //Serial.println("Updating fire sensor");
   }
-/*  
-  if (startFireVal - fireVal >= 10){
+
+  
+  
+  if (startFireVal - fireVal >= FIRE_THRESHOLD){  //If there is a fire (meets threshold)
        Serial.print("THERES FIRE LOL: ");
-       //Serial.println(startFireVal - fireVal);
-       //rotate towards fire and moev forward for either a certain time or until a value is met 
-       //goes for a certain amount until it sees something smaller, at smaller point rotate more until further smaller, else rotate back until original value
+          //Serial.println(startFireVal - fireVal);
+          //rotate towards fire and moev forward for either a certain time or until a value is met 
+          //goes for a certain amount until it sees something smaller, at smaller point rotate more until further smaller, else rotate back until original value
        int tempFireVal = fireVal; //this fireval was a "good value", use it as basis
        fireVal = analogRead(A0);
-       while(fireVal - tempFireVal < 10){
+       
+       while(fireVal - tempFireVal < 200){ //Rotate until the fireval increases by 10
         Serial.print("IN CLOSE FIRE LOOP: curr: ");
         Serial.print(fireVal);
         Serial.print(" --- tempFireVal: ");
@@ -138,23 +147,36 @@ void followWall(int side){
         
         rotate(RIGHT);
         fireVal = analogRead(A0);
-        if(fireVal < tempFireVal - 5){
+        Serial.print("SOME STUPID FIFFERENE: ");
+        Serial.println(fireVal - tempFireVal);
+        
+        if(fireVal < tempFireVal - 5){ 
           Serial.println("FOUND NEW MINIMUM");
           tempFireVal = fireVal; //setting new "center", need to rotate again
         }
        }
 
-       while(abs(tempFireVal - fireVal) <= 4){
-        Serial.println("NOPE GOING BACK");
+       while(abs(tempFireVal - fireVal) >= 50){  //rotate left until you're back at the min (plus or minus 50) (make the constant greater than you would think)
+        Serial.print("NOPE GOING BACK: diff=");
+        Serial.print(abs(tempFireVal - fireVal));
+        Serial.print(", orig: ");
+        Serial.print(tempFireVal);
+        Serial.print(", curr: ");
+        Serial.println(fireVal);
        rotate(LEFT);
        fireVal = analogRead(A0);
        }
+       stopMotors();
+       digitalWrite(fanPin, HIGH); //turns fan on after the motors are stopped - right in front of flame
+       delay(3000);
+       digitalWrite(fanPin, LOW);
+       
        
        
   } else {
     Serial.print("diff: ");
     Serial.println(startFireVal-fireVal);
-  }*/
+  }
     
   /** CASES **/
   if(frontSensor < 4 /*|| frontSensor > 1000*/){  //If the front sensor is too close to the wall, turn right.
@@ -267,7 +289,8 @@ void reverse(){
 }
 
 void stopMotors(){
-//  digitalWrite(enabler, LOW);
+  digitalWrite(enabler1, LOW);
+  digitalWrite(enabler2, LOW);
 }
 
 void enableMotors(){
